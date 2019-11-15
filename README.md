@@ -1,6 +1,6 @@
 ## REST HMAC
 
-Ejemplo de una API REST utilizando [GO] y HMAC, la idea es que se haga un post al endpoint _signature_ con un payload que se desea firmar, esto retorna una llave que se debe enviar como cabecera _X-CB-Signature_ al momento de crear el cliente. la llave secreta es SecretKey = "superawesomesecketkey"
+Ejemplo de una API REST utilizando [GO] y HMAC, la idea es que se haga un post al endpoint _signature_ con un payload que se desea firmar, esto retorna una llave que se debe enviar como cabecera _X-CB-Signature_ al momento de crear el cliente. El proyecto se encuentra compilado por lo que basta con correr el .exe en windows o el binatio en linux. La llave secreta de prueba es _superawesomesecketkey_
 
 ###Endpoins disponibles
 
