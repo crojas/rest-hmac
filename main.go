@@ -17,7 +17,7 @@ type Cliente struct {
 	SecondLastName   string `json:"secondLastName"`
 	Pep              bool   `json:"pep"`
 	Gender           string `json:"gender"`
-	DateOfBirth      string `json:"dateOfBird"`
+	DateOfBirth      string `json:"dateOfBirth"`
 	Nationality      string `json:"nationality"`
 	Phone            int    `json:"phone"`
 	ResidenceCountry string `json:"residenceCountry"`

@@ -2,34 +2,33 @@
 
 Ejemplo de una API REST utilizando [GO] y HMAC
 
-####Endpoins disponibles
+###Endpoins disponibles
 
 - `GET /clients`
 - `GET /clients/:id`
 - `POST /clients`
 
-####Ejemplo de JSON
+###Ejemplo de JSON
 
 ```json
 {
-  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
-  "rut": "15643345-6",
-  "firstName": "Pedro Pablo",
+  "rut": "1-9",
+  "firstName": "Juan Ricardo",
   "lastName": "Perez",
-  "secondLastName": "Quiroz",
+  "secondLastName": "Paredes",
   "pep": true,
   "gender": "male",
-  "dateOfBirth": "1990/12/01",
-  "nationality": "PE",
-  "phone": 56955449932,
+  "dateOfBirth": "1980/10/15",
+  "nationality": "CL",
+  "phone": 569789222,
   "residenceCountry": "CL",
-  "address": "Avenida Los Acacios 2343",
-  "city": "Santiago",
-  "commune": "Quinta Normal",
-  "postalCode": 3059382,
+  "address": "nowhere 1234",
+  "city": "Puerto Varas",
+  "commune": "Puerto Varas",
+  "postalCode": 4132132,
   "maritalStatus": "married",
   "occupation": "employee",
-  "degree": "nurse"
+  "degree": "engineer"
 }
 ```
 
