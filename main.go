@@ -116,7 +116,7 @@ func PostClient(c *gin.Context) {
 
 	// Valida que la firma corresponda al payload que viene en el request.
 	payload, _ := json.Marshal(cli)
-	if VerifySignature(string(payload)) {
+	if VerifySignature(string(payload)) == false {
 		msg := RespMsg{
 			Message: "Invalid X-CB-Signature",
 		}
