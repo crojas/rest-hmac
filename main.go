@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -38,17 +39,15 @@ type RespMsg struct {
 }
 
 var ClientList = []Cliente{}
+var Signature = ""
 var SecretKey = "superawesomesecketkey"
 
 func main() {
 	router := gin.Default()
-	auth := router.Group("")
-	auth.Use(CheckSignature())
-	{
-		auth.GET("/clients", GetClients)
-		auth.GET("/clients/:id", GetClientByID)
-		auth.POST("/clients", PostClient)
-	}
+	router.GET("/clients", GetClients)
+	router.GET("/clients/:id", GetClientByID)
+	// Solo en este metodo se verifica la cabecera.
+	router.POST("/clients", CheckHeaders(), PostClient)
 	router.POST("/signature", SignPayload)
 	router.Run(Port())
 }
@@ -57,32 +56,31 @@ func respondWithError(c *gin.Context, code int, message interface{}) {
 	c.AbortWithStatusJSON(code, gin.H{"error": message})
 }
 
-func CheckSignature() gin.HandlerFunc {
+// Valida que venga la cabecera
+func CheckHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		hsign := c.Request.Header.Get("X-CB-Signature")
-		if hsign == "" {
+		Signature = c.Request.Header.Get("X-CB-Signature")
+		if Signature == "" {
 			respondWithError(c, http.StatusUnauthorized, "X-CB-Signature required")
-			return
-		}
-
-		// Obtiene el payload del request
-		buf := make([]byte, 1024)
-		num, _ := c.Request.Body.Read(buf)
-		payload := string(buf[0:num])
-
-		// Verifica si el payload es igual a la firma
-		h := hmac.New(sha256.New, []byte(SecretKey))
-		h.Write([]byte(payload))
-		calculated := h.Sum(nil)
-		decoded, _ := hex.DecodeString(hsign)
-		if hmac.Equal(calculated, decoded) == false {
-			respondWithError(c, http.StatusUnauthorized, "Invalid X-CB-Signature")
 			return
 		}
 		c.Next()
 	}
 }
 
+// Con el payload, la firma y el secrete verifica que sea un request conocido.
+func VerifySignature(data string) bool {
+	h := hmac.New(sha256.New, []byte(SecretKey))
+	h.Write([]byte(data))
+	calculated := h.Sum(nil)
+	decoded, _ := hex.DecodeString(Signature)
+	if hmac.Equal(calculated, decoded) == false {
+		return false
+	}
+	return true
+}
+
+// Obtiene cliente por ID
 func GetClientByID(c *gin.Context) {
 	clientID := c.Param("id")
 	for _, cli := range ClientList {
@@ -97,30 +95,55 @@ func GetClientByID(c *gin.Context) {
 	c.JSON(http.StatusNotFound, msg)
 }
 
+// Obtiene todos los clientes
 func GetClients(c *gin.Context) {
 	c.JSON(http.StatusOK, ClientList)
 }
 
+// Crea un cliente
 func PostClient(c *gin.Context) {
 	cli := Cliente{}
+
+	// Valida el objeto json
 	err := c.BindJSON(&cli)
 	if err != nil {
-		fmt.Println(err)
 		msg := RespMsg{
 			Message: "Invalid JSON object",
 		}
 		c.JSON(http.StatusBadRequest, msg)
-	} else {
-		id := uuid.New()
-		cli.ID = id.String()
-		ClientList = append(ClientList, cli)
-		c.JSON(http.StatusCreated, cli)
+		return
 	}
+
+	// Valida que la firma corresponda al payload que viene en el request.
+	payload, _ := json.Marshal(cli)
+	if VerifySignature(string(payload)) {
+		msg := RespMsg{
+			Message: "Invalid X-CB-Signature",
+		}
+		c.JSON(http.StatusUnauthorized, msg)
+		return
+	}
+
+	// Valida que no se cree un cliente con el mismo rut.
+	for _, client := range ClientList {
+		if client.Rut == cli.Rut {
+			msg := RespMsg{
+				Message: fmt.Sprintf("A client witch rut %v already exists", cli.Rut),
+			}
+			c.JSON(http.StatusConflict, msg)
+			return
+		}
+	}
+
+	// Crea el cliente
+	id := uuid.New()
+	cli.ID = id.String()
+	ClientList = append(ClientList, cli)
+	c.JSON(http.StatusCreated, cli)
 }
 
+// Genera un firma con el payload
 func SignPayload(c *gin.Context) {
-	// Obtine el payload del request
-	// Obtiene el payload del request
 	buf := make([]byte, 1024)
 	num, _ := c.Request.Body.Read(buf)
 	payload := string(buf[0:num])
@@ -139,6 +162,7 @@ func SignPayload(c *gin.Context) {
 	c.JSON(http.StatusCreated, msg)
 }
 
+// Levanta el proyecto segun puerto
 func Port() string {
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
